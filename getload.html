@@ -1,0 +1,37 @@
+#!/usr/bin/python
+import psutil
+import os, time
+
+last_worktime=0
+last_idletime=0
+
+def memory_usage():
+	vir_mem=psutil.virtual_memory()
+	return vir_mem[0],vir_mem[1]
+
+def cpu_usage():
+	global last_worktime, last_idletime
+	f=open("/proc/stat","r")
+	line=""
+	while not "cpu " in line: line=f.readline()
+	f.close()
+	spl=line.split(" ")
+	worktime=int(spl[2])+int(spl[3])+int(spl[4])
+	idletime=int(spl[5])
+	dworktime=(worktime-last_worktime)
+	didletime=(idletime-last_idletime)
+	rate=float(dworktime)/(didletime+dworktime)
+	last_worktime=worktime
+	last_idletime=idletime
+	if(last_worktime==0): return 0
+	return rate
+print "Content-type:text/html\r\n\r\n"	
+
+ram_total,ram_free = memory_usage()
+for _ in range(10):
+	cpu = cpu_usage()
+	time.sleep(1)
+return_dict = {'cpu_usage':int(cpu*100),'ram_total':ram_total,'ram_free':ram_free}
+
+print return_dict
+
